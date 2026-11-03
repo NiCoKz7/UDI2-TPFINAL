@@ -125,6 +125,8 @@ Invoke-RestMethod -Uri "http://localhost:5007/api/perfumes" -Method Post `
 
 La API queda en `http://localhost:5007` y el puerto administrativo en `http://localhost:8087`.
 
+Con el override local, PostgreSQL también queda accesible desde el host en `localhost:5433` (se usa 5433 para no chocar con un PostgreSQL instalado en el host que ya ocupe 5432).
+
 ## Despliegue en el VPS (examen)
 
 > En el examen el profesor asigna el usuario, la IP y los puertos. Hasta ese momento no hace falta tener acceso al VPS.
