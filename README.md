@@ -109,6 +109,8 @@ Invoke-RestMethod -Uri "http://localhost:5007/api/perfumes" -Method Post `
    docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
    ```
 
+   > La primera ejecución descarga las imágenes base de .NET y PostgreSQL, así que puede tardar varios minutos.
+
 4. Verificar:
 
    ```bash
@@ -306,3 +308,6 @@ Con esto la API queda disponible por HTTPS en el dominio y UFW solo necesita `22
 - **Cambié el esquema y no se aplica**: `init.sql` solo corre con el volumen vacío; ejecutar `docker compose down -v` y volver a levantar.
 - **Error de mayúsculas en Linux**: el archivo debe llamarse exactamente `Dockerfile` (no `dockerfile`).
 - **Puerto ocupado**: cambiar `API_PORT`/`ADMIN_PORT` en `.env`.
+- **`docker` no se reconoce en Windows**: abrir Docker Desktop y reiniciar la terminal. El CLI suele estar en `C:\Users\<usuario>\AppData\Local\Programs\DockerDesktop\resources\bin`.
+- **Error `dockerDesktopLinuxEngine` / pipe not found**: el engine de Docker Desktop no está corriendo; abrir Docker Desktop y esperar a que indique que el engine está listo.
+- **El puerto 5432 está ocupado**: el override local usa `DB_PORT=5433` justamente para no chocar con un PostgreSQL instalado en Windows. Si 5433 también está ocupado, cambiar `DB_PORT` en `.env`.
