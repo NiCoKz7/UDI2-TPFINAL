@@ -4,7 +4,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copiar archivo de proyecto y restaurar dependencias
+# Copiar configuración de SDK y archivo de proyecto, y restaurar dependencias
+COPY global.json ./
 COPY *.csproj ./
 RUN dotnet restore
 
