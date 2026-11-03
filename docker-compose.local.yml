@@ -1,0 +1,16 @@
+# Override para desarrollo local.
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+#
+# No usar este archivo en el VPS: expone PostgreSQL al host y activa
+# el entorno Development.
+
+services:
+  postgres_db:
+    ports:
+      - "5432:5432"
+
+  web_api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - AppSettings__FeatureFlag_EnableDetailedLogs=true

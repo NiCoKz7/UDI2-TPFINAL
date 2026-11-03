@@ -1,0 +1,47 @@
+@host = http://localhost:5007
+@adminHost = http://localhost:8087
+
+### Diagnóstico de entorno
+GET {{host}}/api/status
+
+### Diagnóstico de Kestrel (solo puerto administrativo)
+GET {{adminHost}}/api/kestrel-info
+
+### Listar usuarios
+GET {{host}}/api/usuarios
+
+### Listar formatos
+GET {{host}}/api/formatos
+
+### Listar perfumes
+GET {{host}}/api/perfumes
+
+### Listar perfumes filtrados por formato (1 = Tubo)
+GET {{host}}/api/perfumes?formatoId=1
+
+### Crear perfume
+POST {{host}}/api/perfumes
+Content-Type: application/json
+
+{
+  "nombre": "Sauvage",
+  "marca": "Dior",
+  "precio": 85000,
+  "usuarioId": 1,
+  "formatoId": 1
+}
+
+### Actualizar perfume
+PUT {{host}}/api/perfumes/1
+Content-Type: application/json
+
+{
+  "nombre": "Sauvage Elixir",
+  "marca": "Dior",
+  "precio": 99000,
+  "usuarioId": 1,
+  "formatoId": 1
+}
+
+### Eliminar perfume
+DELETE {{host}}/api/perfumes/1

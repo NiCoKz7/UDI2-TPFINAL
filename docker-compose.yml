@@ -1,0 +1,53 @@
+services:
+  # ------------------------------------------------------------
+  # Base de datos PostgreSQL
+  # ------------------------------------------------------------
+  postgres_db:
+    image: postgres:17-alpine
+    container_name: perfumes_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD no definida en .env}
+    volumes:
+      - pgdata_vol:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-appdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ------------------------------------------------------------
+  # API .NET (Minimal API)
+  # ------------------------------------------------------------
+  web_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: perfumes_api
+    restart: always
+    ports:
+      - "${API_PORT:-5007}:5000"
+      - "${ADMIN_PORT:-8087}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:5000
+      - AppSettings__FeatureFlag_EnableDetailedLogs=${ENABLE_DETAILED_LOGS:-false}
+      - DATABASE_TIMEOUT=${DATABASE_TIMEOUT:-30}
+      - ConnectionStrings__DefaultConnection=Host=postgres_db;Port=5432;Database=${POSTGRES_DB:-appdb};Username=${POSTGRES_USER:-admin};Password=${POSTGRES_PASSWORD}
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  pgdata_vol:
+
+networks:
+  app-network:
+    driver: bridge

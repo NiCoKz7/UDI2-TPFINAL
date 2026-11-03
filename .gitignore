@@ -1,0 +1,18 @@
+# .NET
+bin/
+obj/
+publish/
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+
+# Entorno local y credenciales
+.env
+*.env
+!.env.example
+appsettings.Local.json

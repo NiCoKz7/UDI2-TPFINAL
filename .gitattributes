@@ -1,0 +1,11 @@
+# Normalizar saltos de línea a LF para que el proyecto funcione igual
+# en Windows (desarrollo) y en Linux (VPS / contenedores).
+* text=auto eol=lf
+
+# Archivos binarios
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
