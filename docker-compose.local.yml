@@ -2,15 +2,40 @@
 # Uso:
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 #
-# No usar este archivo en el VPS: expone PostgreSQL al host y activa
-# el entorno Development.
+# Agrega PostgreSQL en un contenedor con volumen nombrado y expone
+# la base al host en 5433. NO usar este archivo en el VPS: allí la
+# API se conecta al PostgreSQL compartido indicado por DB_HOST.
 
 services:
   postgres_db:
+    image: postgres:17-alpine
+    container_name: perfumes_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD no definida en .env}
+    volumes:
+      - pgdata_vol:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "${DB_PORT:-5433}:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-appdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   web_api:
+    depends_on:
+      postgres_db:
+        condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - AppSettings__FeatureFlag_EnableDetailedLogs=true
+      - ConnectionStrings__DefaultConnection=Host=postgres_db;Port=5432;Database=${POSTGRES_DB:-appdb};Username=${POSTGRES_USER:-admin};Password=${POSTGRES_PASSWORD}
+
+volumes:
+  pgdata_vol:

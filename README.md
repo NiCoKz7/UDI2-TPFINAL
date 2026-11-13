@@ -17,18 +17,23 @@ Trabajo Práctico Final de **UDI 2: Infraestructura para Aplicaciones Backend** 
 
 Tres tablas relacionadas:
 
-| Tabla | Campos |
-|---|---|
-| **Usuarios** | `Id`, `Nombre`, `Email` |
-| **Formatos** | `Id`, `Nombre` (`Tubo`, `Miniatura`, `Botella`) |
-| **Perfumes** | `Id`, `Nombre`, `Marca`, `Precio`, `UsuarioId` (FK), `FormatoId` (FK) |
+| Tabla | Nombre físico | Campos |
+|---|---|---|
+| **Usuarios** | `udi2_usuarios` | `Id`, `Nombre`, `Email` |
+| **Formatos** | `udi2_formatos` | `Id`, `Nombre` (`Tubo`, `Miniatura`, `Botella`) |
+| **Perfumes** | `udi2_perfumes` | `Id`, `Nombre`, `Marca`, `Precio`, `UsuarioId` (FK), `FormatoId` (FK) |
+
+> El prefijo `udi2_` permite convivir en la **base compartida del VPS** (una sola base por alumno) sin chocar con tablas de otros proyectos o materias. En la API los nombres siguen siendo `usuarios`, `formatos` y `perfumes`: el prefijo es solo el nombre físico de la tabla.
 
 Relaciones:
 
 - Un **usuario** puede tener muchos **perfumes**.
 - Un **formato** puede estar asociado a muchos **perfumes**.
 
-El esquema y los datos de prueba se crean con `init.sql` la primera vez que se inicializa el volumen de PostgreSQL.
+El esquema y los datos de prueba se crean con `init.sql`:
+
+- **En local:** se ejecuta automáticamente la primera vez que se inicializa el volumen de PostgreSQL (`docker-entrypoint-initdb.d`).
+- **En el VPS:** se ejecuta una vez a mano contra la base asignada (ver pasos de despliegue).
 
 ## Endpoints
 
@@ -164,20 +169,38 @@ Con el override local, PostgreSQL también queda accesible desde el host en `loc
    nano .env
    ```
 
-   Ajustar:
+   Ajustar con los datos que entrega el profesor:
 
    - `API_PORT` y `ADMIN_PORT` con los puertos asignados (ej. `5007` y `8087`).
-   - `POSTGRES_PASSWORD` con una contraseña propia.
+   - `DB_HOST`, `DB_INTERNAL_PORT`, `POSTGRES_DB`, `POSTGRES_USER` y `POSTGRES_PASSWORD` con los datos del **PostgreSQL compartido**.
    - `ASPNETCORE_ENVIRONMENT=Production`.
    - `ENABLE_DETAILED_LOGS=false`.
 
-5. Levantar el stack **sin** el override local (para no exponer PostgreSQL):
+   > Si el PostgreSQL compartido escucha en el host del VPS, usar `DB_HOST=host.docker.internal` (el compose ya agrega `host-gateway`).
+
+5. Crear las tablas y cargar los datos de prueba en la base asignada (una sola vez):
+
+   ```bash
+   set -a
+   source .env
+   set +a
+
+   docker run --rm -v "$PWD/init.sql:/init.sql:ro" \
+     --add-host=host.docker.internal:host-gateway \
+     -e PGPASSWORD="$POSTGRES_PASSWORD" \
+     postgres:17-alpine \
+     psql -h "$DB_HOST" -p "$DB_INTERNAL_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /init.sql
+   ```
+
+   > La API también crea el esquema automáticamente al arrancar (`EnsureCreated`) cuando la base está vacía, pero `init.sql` es el que carga los formatos, usuarios y perfumes de ejemplo. En una base compartida que ya tiene tablas de otras materias, `EnsureCreated` no crea nada: por eso `init.sql` es obligatorio.
+
+6. Levantar el stack **sin** el override local (solo la API, conectada al PostgreSQL compartido):
 
    ```bash
    docker compose up -d --build
    ```
 
-6. Verificar:
+7. Verificar:
 
    ```bash
    docker compose ps
@@ -187,7 +210,7 @@ Con el override local, PostgreSQL también queda accesible desde el host en `loc
    curl http://localhost:8087/api/kestrel-info
    ```
 
-7. Firewall (UFW):
+8. Firewall (UFW):
 
    ```bash
    sudo ufw default deny incoming
@@ -202,6 +225,8 @@ Con el override local, PostgreSQL también queda accesible desde el host en `loc
    > Si usás Nginx, permití solo `22`, `80` y `443` y no expongas `5007`/`8087` al exterior.
 
 ## DNS dinámico con DuckDNS
+
+> Anexo opcional: esta parte **no se evalúa** en el examen. Se deja documentada por si se necesita más adelante.
 
 1. Registrarse en <https://www.duckdns.org> y crear un subdominio (ej. `perfumes-nico.duckdns.org`).
 2. Actualizar la IP del VPS desde el panel.
@@ -272,7 +297,8 @@ Con esto la API queda disponible por HTTPS en el dominio y UFW solo necesita `22
 - **Nunca** subir `.env` al repositorio (ya está en `.gitignore`).
 - La cadena de conexión se inyecta con `ConnectionStrings__DefaultConnection`.
 - `appsettings.json` no contiene credenciales.
-- PostgreSQL no se expone al exterior en producción: solo se accede por la red interna `app-network`.
+- El PostgreSQL de desarrollo (override local) no forma parte del compose base y no se expone al exterior.
+- En el VPS la API se conecta al PostgreSQL compartido indicado por `DB_HOST`; la base no se publica desde el compose.
 - `/api/kestrel-info` solo responde por el puerto administrativo 8080.
 - Usar una contraseña de base sin `;` ni espacios para evitar problemas en la cadena de conexión.
 
@@ -304,8 +330,10 @@ Con esto la API queda disponible por HTTPS en el dominio y UFW solo necesita `22
 ## Solución de problemas
 
 - **`POSTGRES_PASSWORD no definida`**: falta crear `.env` o completar la variable.
-- **La API no conecta a la base**: revisar `docker compose ps` y `docker logs perfumes_db`; esperar el healthcheck.
-- **Cambié el esquema y no se aplica**: `init.sql` solo corre con el volumen vacío; ejecutar `docker compose down -v` y volver a levantar.
+- **La API no conecta a la base (local)**: revisar `docker compose ps` y `docker logs perfumes_db`; esperar el healthcheck.
+- **La API no conecta al PostgreSQL del VPS**: revisar `DB_HOST`, `DB_INTERNAL_PORT`, usuario, contraseña y nombre de la base. Si la base escucha en el host, usar `DB_HOST=host.docker.internal`.
+- **No aparecen las tablas `udi2_*` en el VPS**: ejecutar `init.sql` contra la base asignada (paso 5 del despliegue).
+- **Cambié el esquema y no se aplica en local**: `init.sql` solo corre con el volumen vacío; ejecutar `docker compose -f docker-compose.yml -f docker-compose.local.yml down -v` y volver a levantar.
 - **Error de mayúsculas en Linux**: el archivo debe llamarse exactamente `Dockerfile` (no `dockerfile`).
 - **Puerto ocupado**: cambiar `API_PORT`/`ADMIN_PORT` en `.env`.
 - **`docker` no se reconoce en Windows**: abrir Docker Desktop y reiniciar la terminal. El CLI suele estar en `C:\Users\<usuario>\AppData\Local\Programs\DockerDesktop\resources\bin`.

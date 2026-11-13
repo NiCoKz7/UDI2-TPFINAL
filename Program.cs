@@ -1,11 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException(
-        "Falta la cadena de conexión. Definí la variable de entorno ConnectionStrings__DefaultConnection.");
-
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
 // Kestrel escucha en dos puertos: 5000 (público) y 8080 (administración/diagnóstico).
@@ -16,6 +14,14 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 var app = builder.Build();
+// Si la base no existe o está completamente vacía, EF crea el esquema.
+// En el VPS la base ya existe y puede tener tablas de otras materias,
+// por eso las tablas udi2_* y los datos de prueba se cargan con init.sql.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
 
 // Middleware de hardening: /api/kestrel-info solo es accesible por el puerto administrativo.
 app.Use(async (context, next) =>
@@ -71,9 +77,8 @@ app.MapGet("/api/kestrel-info", () =>
     return Results.Ok(response);
 });
 
-// ---------------------------------------------------------------------------
+
 // Endpoints obligatorios del TP Final (6)
-// ---------------------------------------------------------------------------
 
 // 1) Listar usuarios
 app.MapGet("/api/usuarios", async (AppDbContext db) =>
