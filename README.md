@@ -336,6 +336,11 @@ Con esto la API queda disponible por HTTPS en el dominio y UFW solo necesita `22
 - **Cambié el esquema y no se aplica en local**: `init.sql` solo corre con el volumen vacío; ejecutar `docker compose -f docker-compose.yml -f docker-compose.local.yml down -v` y volver a levantar.
 - **Error de mayúsculas en Linux**: el archivo debe llamarse exactamente `Dockerfile` (no `dockerfile`).
 - **Puerto ocupado**: cambiar `API_PORT`/`ADMIN_PORT` en `.env`.
-- **`docker` no se reconoce en Windows**: abrir Docker Desktop y reiniciar la terminal. El CLI suele estar en `C:\Users\<usuario>\AppData\Local\Programs\DockerDesktop\resources\bin`.
+- **`docker` no se reconoce en Windows**: el CLI está instalado pero su carpeta no está en el PATH. Abrir PowerShell y ejecutar una sola vez:
+  ```powershell
+  $bin = "$env:LOCALAPPDATA\Programs\DockerDesktop\resources\bin"
+  [Environment]::SetEnvironmentVariable('Path', "$([Environment]::GetEnvironmentVariable('Path','User').TrimEnd(';'));$bin", 'User')
+  ```
+  Luego **cerrar y reabrir la terminal** (el PATH no se recarga en sesiones ya abiertas). En instalaciones per-machine la ruta es `C:\Program Files\Docker\Docker\resources\bin`.
 - **Error `dockerDesktopLinuxEngine` / pipe not found**: el engine de Docker Desktop no está corriendo; abrir Docker Desktop y esperar a que indique que el engine está listo.
 - **El puerto 5432 está ocupado**: el override local usa `DB_PORT=5433` justamente para no chocar con un PostgreSQL instalado en Windows. Si 5433 también está ocupado, cambiar `DB_PORT` en `.env`.
