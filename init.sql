@@ -1,13 +1,8 @@
--- ============================================================
 -- Esquema y datos de prueba (seeding).
---
--- Las tablas usan el prefijo "udi2_" para convivir sin choques en
--- la base compartida del VPS (una sola base por alumno).
---
+
 -- En local se ejecuta automáticamente al crear el volumen de
 -- PostgreSQL (docker-entrypoint-initdb.d).
 -- En el VPS se ejecuta una vez a mano contra la base asignada.
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS "udi2_formatos" (
     "Id" SERIAL PRIMARY KEY,

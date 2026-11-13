@@ -1,6 +1,4 @@
-# ==========================================
 # ETAPA 1: Compilación y Publicación (Build)
-# ==========================================
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
@@ -13,9 +11,7 @@ RUN dotnet restore
 COPY . ./
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-# ==========================================
 # ETAPA 2: Entorno de Ejecución (Runtime)
-# ==========================================
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
 WORKDIR /app
 

@@ -37,8 +37,7 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Nombres físicos con prefijo para convivir en la base compartida del VPS
-        // sin chocar con tablas de otros proyectos o materias.
+        
         modelBuilder.Entity<Usuario>().ToTable("udi2_usuarios");
         modelBuilder.Entity<Formato>().ToTable("udi2_formatos");
         modelBuilder.Entity<Perfume>().ToTable("udi2_perfumes");

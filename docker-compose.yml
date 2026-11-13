@@ -1,11 +1,9 @@
 services:
-  # ------------------------------------------------------------
   # API .NET (Minimal API)
   #
-  # En el VPS se conecta al PostgreSQL compartido que provee el
-  # profesor (ver DB_HOST en .env). El PostgreSQL de desarrollo
+  # En el VPS se conecta al PostgreSQL compartido 
+  # El PostgreSQL de desarrollo
   # vive en docker-compose.local.yml.
-  # ------------------------------------------------------------
   web_api:
     build:
       context: .

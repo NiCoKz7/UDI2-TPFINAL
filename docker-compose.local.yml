@@ -3,7 +3,7 @@
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 #
 # Agrega PostgreSQL en un contenedor con volumen nombrado y expone
-# la base al host en 5433. NO usar este archivo en el VPS: allí la
+# la base al host en 5433. en el VPS: la
 # API se conecta al PostgreSQL compartido indicado por DB_HOST.
 
 services:
